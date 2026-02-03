@@ -1,0 +1,3 @@
+jwt:
+  secret: z6vB9pX8N2m4Q7r5V3t6y9z$C&E)H@McQfTjWnZr4u7x!A%D*G-KaPdSgUkXp2s5
+  token-validity-in-seconds: 86400
