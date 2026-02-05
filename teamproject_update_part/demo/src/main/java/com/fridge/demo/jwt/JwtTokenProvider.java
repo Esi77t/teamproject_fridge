@@ -15,20 +15,32 @@ import java.util.Date;
 public class JwtTokenProvider {
 
     private final Key key;
-    private final long tokenValidityInMilliseconds;
+//    private final long tokenValidityInMilliseconds;
 
-    public JwtTokenProvider(
-            @Value("${jwt.secret}") String secretKey,
-            @Value("${jwt.token-validity-in-seconds}") long tokenValidityInSeconds) {
+    // 만료 시간 설정
+    private final long ACCESS_TOKEN_EXPIRE_TIME = 1000L * 60 * 30; // 30분
+    private final long REFRESH_TOKEN_EXPIRE_TIME = 1000L * 60 * 60 * 24 * 7; // 7일
+
+    public JwtTokenProvider(@Value("${jwt.secret}") String secretKey) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         this.key = Keys.hmacShaKeyFor(keyBytes);
-        this.tokenValidityInMilliseconds = tokenValidityInSeconds * 1000;
+//        this.tokenValidityInMilliseconds = tokenValidityInSeconds * 1000;
+    }
+
+    // AccessToken 생성
+    public String createAccessToken(String userId) {
+        return createToken(userId, ACCESS_TOKEN_EXPIRE_TIME);
+    }
+
+    // RefreshToken 생성
+    public String createRefreshToken(String userId) {
+        return createToken(userId, REFRESH_TOKEN_EXPIRE_TIME);
     }
 
     // 토큰 생성
-    public String createToken(String userId) {
+    public String createToken(String userId, long expireTIme) {
         long now = (new Date()).getTime();
-        Date validity = new Date(now + this.tokenValidityInMilliseconds);
+        Date validity = new Date(now + expireTIme);
 
         return Jwts.builder()
                 .setSubject(userId) // 토큰의 주인(userId) 저장
@@ -49,7 +61,7 @@ public class JwtTokenProvider {
         return claims.getSubject();
     }
 
-    // 3. 유효성 검증: 토큰이 변조되지 않았는지, 만료되지 않았는지 확인
+    // 유효성 검증: 토큰이 변조되지 않았는지, 만료되지 않았는지 확인
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);

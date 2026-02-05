@@ -24,10 +24,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // 1. Request Header에서 JWT 토큰 추출
+        // Request Header에서 JWT 토큰 추출
         String token = resolveToken(request);
 
-        // 2. 토큰 유효성 검사
+        // 토큰 유효성 검사
         if (token != null && jwtTokenProvider.validateToken(token)) {
             // 토큰이 유효하면 토큰으로부터 유저 정보를 받아옵니다.
             String userId = jwtTokenProvider.getUserId(token);
@@ -44,11 +44,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // 헤더에서 'Authorization: Bearer [Token]' 형식으로 토큰을 가져오는 메서드
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
+        }
+
+        // 쿠키에서 추출
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if ("accessToken".equals(cookie.getName())) {
+                     return cookie.getValue();
+                }
+            }
         }
         return null;
     }
