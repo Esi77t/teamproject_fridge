@@ -12,29 +12,62 @@ const api = axios.create({
     },
 });
 
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+// 대기 중인 요청들을 처리하는 함수
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) prom.reject(error);
+        else prom.resolve(token);
+    });
+    failedQueue = [];
+};
+
 api.interceptors.response.use(
-    (response) => response,     // 성공하면 그대로 반환하고
+    (response) => response,
     async (error) => {
         const originalRequest = error.config as CustomAxiosRequestConfig;
 
-        // 401 에러가 발생했고 아직 재시도를 하지 않았다면
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            originalRequest._retry = true;  // 재시도 표시(무한루프 방지용)
+        // 401 에러이고 재시도 전이며, 로그인/회원가입 요청이 아닌 경우에만 Refresh 시도
+        const isAuthRequest = originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/signup');
 
-            try {
-                // /auth/refresh 엔드포인트 호출
-                await api.post('/auth/refresh');
+        if (error.response?.status === 401 && !originalRequest._retry && !isAuthRequest) {
 
-                // 재발급 성공시 실패했던 원래 요청 다시 시도
-                return api(originalRequest);
-            } catch (reissueError) {
-                // 재발급 실패 시 로그인페이지로 이동
-                console.error("세션이 만료되었습니다. 다시 로그인해주세요.");
-                window.location.href = '/login';
-                return Promise.reject(reissueError);
+            // 이미 다른 요청이 토큰을 갱신 중이라면 큐에서 대기
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject });
+                })
+                    .then(() => api(originalRequest))
+                    .catch((err) => Promise.reject(err));
             }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            return new Promise((resolve, reject) => {
+                api.post('/auth/refresh')
+                    .then(() => {
+                        processQueue(null);
+                        resolve(api(originalRequest));
+                    })
+                    .catch((reissueError) => {
+                        processQueue(reissueError, null);
+                        // Refresh Token마저 만료된 경우
+                        console.error("세션 만료. 다시 로그인하세요.");
+                        if (typeof window !== 'undefined') {
+                            window.location.href = '/login';
+                        }
+                        reject(reissueError);
+                    })
+                    .finally(() => {
+                        isRefreshing = false;
+                    });
+            });
         }
 
+        // 로그인/회원가입 실패 시 혹은 기타 에러는 그대로 reject
         return Promise.reject(error);
     }
-)
+);
