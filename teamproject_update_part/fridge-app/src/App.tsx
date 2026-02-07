@@ -1,29 +1,21 @@
-import { useEffect, useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
-import api from './api/api'
+import { Navigate, Route, Router, Routes } from 'react-router-dom';
+import Login from './pages/LoginPage';
+import Signup from './pages/SignupPage';
 
 function App() {
-    const [user, setUser] = useState(null);
-
-    useEffect(() => {
-        const checkLogin = async () => {
-            try {
-                const response =  await api.get('/auth/me');
-                setUser(response.data);
-            } catch (error) {
-                console.error('로그인 정보 없음');
-            };
-        }
-
-        checkLogin();
-    }, []);
-
     return (
-        <>
-        </>
-    )
+        <div className='app-container'>
+            <main className='main-content'>
+                <Routes>
+                    <Route path="/" element={<Navigate to="/login" replace />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="*" element={<div>페이지를 찾을 수 없습니다.</div>} />
+                </Routes>
+            </main>
+        </div>
+    );
 }
 
 export default App

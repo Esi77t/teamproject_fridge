@@ -5,6 +5,19 @@ export interface User {
     profileImageUrl?: string;
 }
 
+export interface LoginRequest {
+    userId: string;
+    password: string;
+}
+
+export interface SignupRequest {
+    userId: string;
+    nickname: string;
+    password: string;
+    email: string;
+    profileImageUrl?: string;
+}
+
 export interface ApiResponse<T> {
     status: string;
     message: string;
