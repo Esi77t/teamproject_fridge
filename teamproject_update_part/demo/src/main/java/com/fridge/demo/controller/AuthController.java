@@ -9,10 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -49,6 +46,11 @@ public class AuthController {
         cookieUtil.setTokenCookie(response, tokenDto.getAccessToken(), tokenDto.getRefreshToken());
 
         return ResponseEntity.ok("토큰 재발급 성공");
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDto.Response> getCurrentUser(@AuthenticationPrincipal String userId) {
+        return ResponseEntity.ok(authService.getUserInfo(userId));
     }
 
     @PostMapping("/logout")

@@ -103,4 +103,12 @@ public class AuthService {
         refreshTokenRepository.findByUserId(userId)
                 .ifPresent(refreshTokenRepository::delete);
     }
+
+    // 유저 정보 조회(로그인 유지 확인용)
+    public UserDto.Response getUserInfo(String userId) {
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        return UserDto.Response.fromEntity(user);
+    }
 }
