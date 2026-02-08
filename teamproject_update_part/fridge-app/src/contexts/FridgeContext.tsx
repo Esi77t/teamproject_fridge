@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import { Ingredient, CartItem, Category, AddIngredientRequest } from '@/types';
+import type { Ingredient, CartItem, Category, AddIngredientRequest } from '@/types';
 import { workspaceApi, ingredientApi, cartApi } from '@/services/api';
 import { getCategoryEmoji } from '@/utils/constants';
 
@@ -17,7 +17,7 @@ interface FridgeContextType {
     updateIngredientCategory: (id: number, category: Category) => Promise<void>;
 
     // 장바구니 관련
-    addCartItem: (name: string, quantity: number, category: Category) => Promise<void>;
+    addCartItem: (name: string, quantity: number, category: Category, expirationDate?: string) => Promise<void>;
     removeCartItem: (id: number) => Promise<void>;
     moveCartItemToFridge: (id: number, category: Category) => Promise<void>;
 
@@ -71,7 +71,7 @@ export const FridgeProvider = ({ children }: FridgeProviderProps) => {
         quantity: number,
         category: Category,
         icon?: string,
-        expirationDate?: string
+        expirationDate?: string,
     ) => {
         try {
             const data: AddIngredientRequest = {
@@ -102,6 +102,35 @@ export const FridgeProvider = ({ children }: FridgeProviderProps) => {
         }
     }, []);
 
+    // 재료 → 장바구니
+    const moveIngredientToCart = useCallback(async (id: number, moveQuantity: number) => {
+        // 낙관적 업데이트: 먼저 UI 업데이트
+        const itemToMove = ingredients.find((item) => item.id === id);
+        if (!itemToMove) return;
+
+        // UI에서 즉시 제거
+        setIngredients((prev) => prev.filter((item) => item.id !== id));
+
+        // 장바구니에 즉시 추가
+        const newCartItem = {
+            ...itemToMove,
+            id: Date.now(), // 임시 ID
+        };
+        setCartItems((prev) => [...prev, newCartItem]);
+
+        try {
+            // 백엔드 API 호출
+            await ingredientApi.moveToCart(id, moveQuantity);
+            // 성공 시 최신 데이터로 동기화
+            await refreshData();
+        } catch (err) {
+            // 실패 시 롤백
+            console.error('Failed to move ingredient to cart:', err);
+            await refreshData(); // 원래 상태로 복구
+            throw err;
+        }
+    }, [ingredients, refreshData]);
+
     // 재료 카테고리 변경 (냉장고 내 이동)
     const updateIngredientCategory = useCallback(async (id: number, category: Category) => {
         try {
@@ -114,17 +143,6 @@ export const FridgeProvider = ({ children }: FridgeProviderProps) => {
             throw err;
         }
     }, []);
-
-    // 재료 → 장바구니
-    const moveIngredientToCart = useCallback(async (id: number, moveQuantity: number) => {
-        try {
-            await ingredientApi.moveToCart(id, moveQuantity);
-            await refreshData();
-        } catch (err) {
-            console.error('Failed to move ingredient to cart:', err);
-            throw err;
-        }
-    }, [refreshData]);
 
     // 장바구니 추가
     const addCartItem = useCallback(async (
@@ -161,14 +179,37 @@ export const FridgeProvider = ({ children }: FridgeProviderProps) => {
 
     // 장바구니 → 냉장고
     const moveCartItemToFridge = useCallback(async (id: number, category: Category) => {
+        // 낙관적 업데이트: 먼저 UI 업데이트
+        const itemToMove = cartItems.find((item) => item.id === id);
+        if (!itemToMove) return;
+
+        // 장바구니에서 즉시 제거
+        setCartItems((prev) => prev.filter((item) => item.id !== id));
+
+        // 냉장고에 즉시 추가
+        const newIngredient = {
+            ...itemToMove,
+            category,
+            icon: getCategoryEmoji(category),
+            daysLeft: itemToMove.expirationDate
+                ? Math.ceil((new Date(itemToMove.expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+                : undefined,
+            id: Date.now(), // 임시 ID
+        };
+        setIngredients((prev) => [...prev, newIngredient]);
+
         try {
+            // 백엔드 API 호출
             await cartApi.moveToFridge(id, category);
+            // 성공 시 최신 데이터로 동기화
             await refreshData();
         } catch (err) {
+            // 실패 시 롤백
             console.error('Failed to move cart item to fridge:', err);
+            await refreshData(); // 원래 상태로 복구
             throw err;
         }
-    }, [refreshData]);
+    }, [cartItems, refreshData]);
 
     const value: FridgeContextType = {
         ingredients,
@@ -178,11 +219,11 @@ export const FridgeProvider = ({ children }: FridgeProviderProps) => {
         addIngredient,
         removeIngredient,
         moveIngredientToCart,
+        updateIngredientCategory,
         addCartItem,
         removeCartItem,
         moveCartItemToFridge,
         refreshData,
-        updateIngredientCategory,
     };
 
     return <FridgeContext.Provider value={value}>{children}</FridgeContext.Provider>;

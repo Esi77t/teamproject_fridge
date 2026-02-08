@@ -28,7 +28,7 @@ const Sidebar = () => {
 
         try {
             const icon = getCategoryEmoji(newItemCategory);
-            await addIngredient(newItemName.trim(), newItemQuantity, newItemCategory, icon);
+            await addIngredient(newItemName.trim(), newItemQuantity, newItemCategory, icon, newItemExpirationDate);
 
             // 입력 필드 초기화
             setNewItemName('');

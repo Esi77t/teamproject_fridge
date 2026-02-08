@@ -2,7 +2,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useFridge } from '@/contexts/FridgeContext';
 import { Ingredient } from '@/types';
-import { getCategoryEmoji, getDaysLeftText, getExpirationColor } from '@/utils/constants';
+import { formatDate, getCategoryEmoji, getDaysLeftText, getExpirationColor } from '@/utils/constants';
 
 interface ItemProps {
     item: Ingredient;
@@ -48,6 +48,7 @@ const Item = ({ item }: ItemProps) => {
             {/* 삭제 버튼 */}
             <button
                 onClick={handleDelete}
+                onPointerDown={(e) => e.stopPropagation()}
                 className="absolute top-0 right-0 -mt-2 -mr-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold hover:bg-red-600 transition-colors duration-200 z-10"
                 aria-label="Delete item"
             >

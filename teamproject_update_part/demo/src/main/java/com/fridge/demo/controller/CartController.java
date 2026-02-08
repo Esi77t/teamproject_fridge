@@ -27,6 +27,15 @@ public class CartController {
         return ResponseEntity.ok(cartService.addCartItem(request, userId));
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCartItem(
+            @PathVariable Long id,
+            @AuthenticationPrincipal String userId
+    ) {
+        cartService.deleteCartItem(id, userId);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/{id}/move")
     public ResponseEntity<Void> moveToFridge(
             @PathVariable Long id,

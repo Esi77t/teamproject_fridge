@@ -49,6 +49,19 @@ public class CartService {
     }
 
     @Transactional
+    public void deleteCartItem(Long cartItemId, String userId) {
+        CartItem cartItem = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new RuntimeException("항목을 찾을 수 없습니다."));
+
+        // 본인 확인
+        if (!cartItem.getUser().getUserId().equals(userId)) {
+            throw new RuntimeException("권한이 없습니다.");
+        }
+
+        cartItemRepository.delete(cartItem);
+    }
+
+    @Transactional
     public void moveToFridge(Long cartItemId, String targetCategory, String userId) {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new RuntimeException("항목을 찾을 수 없습니다."));

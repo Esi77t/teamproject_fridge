@@ -56,9 +56,9 @@ const CartItemDisplay = ({ item }: CartItemDisplayProps) => {
                     <p className="text-xs text-orange-200">
                         수량: {item.quantity} | 카테고리: {getCategoryTitle(item.category)}
                     </p>
-                    <p className="text-xs text-orange-200">
+                    {/* <p className="text-xs text-orange-200">
                         담은 날짜: {formatDate(item.createdAt)}
-                    </p>
+                    </p> */}
                     {item.expirationDate && daysLeft !== null && (
                         <p className={`text-xs font-semibold mt-1 ${getExpirationColor(daysLeft)}`}>
                             유통기한: {getDaysLeftText(daysLeft)}
@@ -71,6 +71,7 @@ const CartItemDisplay = ({ item }: CartItemDisplayProps) => {
                 variant="destructive"
                 size="sm"
                 className="w-full mt-2"
+                onPointerDown={(e) => e.stopPropagation()}
             >
                 삭제
             </Button>

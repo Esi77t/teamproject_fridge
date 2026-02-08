@@ -34,12 +34,14 @@ public class IngredientDto {
         private Long daysLeft; // 잔여 일수
 
         public static Response fromEntity(Ingredient ingredient) {
+            Long daysLeft = ingredient.getDaysUntilExpiration();
+
             return Response.builder()
                     .id(ingredient.getId())
                     .name(ingredient.getName())
                     .quantity(ingredient.getQuantity())
                     .expirationDate(ingredient.getExpirationDate())
-                    .daysLeft(ingredient.getDaysUntilExpiration())
+                    .daysLeft(daysLeft)
                     .unit(ingredient.getUnit())
                     .category(ingredient.getCategory())
                     .icon(ingredient.getIcon())

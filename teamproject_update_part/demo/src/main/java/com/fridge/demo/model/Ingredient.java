@@ -64,8 +64,8 @@ public class Ingredient extends BaseTimeEntity{
         this.quantity = newQuantity;
     }
 
-    public long getDaysUntilExpiration() {
-        if (this.expirationDate == null) return 999;
+    public Long getDaysUntilExpiration() {
+        if (this.expirationDate == null) return null;
         return ChronoUnit.DAYS.between(LocalDate.now(), this.expirationDate);
     }
 }
