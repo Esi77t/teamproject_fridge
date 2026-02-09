@@ -46,9 +46,9 @@ export const FridgeProvider = ({ children }: FridgeProviderProps) => {
     const [error, setError] = useState<string | null>(null);
 
     // 초기 데이터 로드
-    const refreshData = useCallback(async () => {
+    const refreshData = useCallback(async (silent = false) => {
         try {
-            setIsLoading(true);
+            if (!silent) setIsLoading(true);
             setError(null);
             const response = await workspaceApi.getWorkspace();
             setIngredients(response.data.ingredients || []);
@@ -122,11 +122,11 @@ export const FridgeProvider = ({ children }: FridgeProviderProps) => {
             // 백엔드 API 호출
             await ingredientApi.moveToCart(id, moveQuantity);
             // 성공 시 최신 데이터로 동기화
-            await refreshData();
+            await refreshData(true);
         } catch (err) {
             // 실패 시 롤백
             console.error('Failed to move ingredient to cart:', err);
-            await refreshData(); // 원래 상태로 복구
+            await refreshData(false); // 원래 상태로 복구
             throw err;
         }
     }, [ingredients, refreshData]);
@@ -202,11 +202,11 @@ export const FridgeProvider = ({ children }: FridgeProviderProps) => {
             // 백엔드 API 호출
             await cartApi.moveToFridge(id, category);
             // 성공 시 최신 데이터로 동기화
-            await refreshData();
+            await refreshData(true);
         } catch (err) {
             // 실패 시 롤백
             console.error('Failed to move cart item to fridge:', err);
-            await refreshData(); // 원래 상태로 복구
+            await refreshData(false); // 원래 상태로 복구
             throw err;
         }
     }, [cartItems, refreshData]);

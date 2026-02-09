@@ -2,7 +2,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useFridge } from '@/contexts/FridgeContext';
 import { Ingredient } from '@/types';
-import { formatDate, getCategoryEmoji, getDaysLeftText, getExpirationColor } from '@/utils/constants';
+import { getCategoryEmoji, getDaysLeftText, getExpirationColor } from '@/utils/constants';
 
 interface ItemProps {
     item: Ingredient;
